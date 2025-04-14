@@ -1,0 +1,33 @@
+version: '3.6'
+
+services:
+
+
+ customer-services:
+   build: customer-services
+   hostname: customerssservicehost
+   ports:
+    - "8081:8080"
+   environment:
+    - SPRING_PROFILES_ACTIVE=docker
+   depends_on:
+    customerspostgres-db:
+      condition: service_healthy
+
+ customerspostgres-db:
+  image: postgres:15
+  container_name: customerspostgres-db
+  ports:
+    - "5433:5432"
+  environment:
+    POSTGRES_DB: customers-db
+    POSTGRES_USER: user
+    POSTGRES_PASSWORD: pwd
+  healthcheck:
+    test: [ "CMD-SHELL", "pg_isready -U user" ]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+
+volumes:
+  db_data:
