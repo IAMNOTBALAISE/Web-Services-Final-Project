@@ -2,7 +2,7 @@ Watch Store – Microservices Architecture
 
 **Project Overview**
 
-This project implements a Watch Store Management System using a Spring Boot microservices architecture. It is designed to demonstrate Domain-Driven Design (DDD), modularity, and containerized deployment.
+This project implements a Watch Store Management System using a  RESTful API Spring Boot microservices architecture. It is designed to demonstrate Domain-Driven Design (DDD), modularity, and containerized deployment.
 
 The system manages the core domains of a luxury watch business: Customers, Products, Orders, and Service Plans, all accessible through an API Gateway. Each service is independently developed, deployed, and connected to its own database for scalability and fault isolation.
  
