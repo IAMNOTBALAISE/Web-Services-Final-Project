@@ -4,6 +4,7 @@ package com.example.customerservices.presentationlayer;
 
 import com.example.customerservices.businesslogiclayer.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,18 +38,27 @@ public class CustomerController {
 
     @PostMapping()
     public ResponseEntity<CustomerResponseModel> addCustomer(@RequestBody CustomerRequestModel newCustomerData) {
-        return ResponseEntity.ok(this.customerService.addCustomer(newCustomerData));
+
+        CustomerResponseModel created = this.customerService.addCustomer(newCustomerData);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(created);
     }
 
     @PutMapping("/{customer_id}")
     public ResponseEntity<CustomerResponseModel> updateCustomer(
             @PathVariable String customer_id,
             @RequestBody CustomerRequestModel newCustomerData) {
+
+
         return ResponseEntity.ok(this.customerService.updateCustomer(customer_id, newCustomerData));
     }
 
     @DeleteMapping("/{customer_id}")
     public ResponseEntity<String> deleteCustomerById(@PathVariable String customer_id) {
-        return ResponseEntity.ok(this.customerService.deleteCustomerbyCustomerId(customer_id));
+
+        this.customerService.deleteCustomerbyCustomerId(customer_id);
+        return ResponseEntity.noContent().build();
     }
 }

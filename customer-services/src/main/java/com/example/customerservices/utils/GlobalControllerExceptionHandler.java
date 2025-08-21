@@ -3,7 +3,7 @@ package com.example.customerservices.utils;
 
 
 
-import com.example.customerservices.utils.exceptions.DuplicateVinException;
+import com.example.customerservices.utils.exceptions.DuplicateCustomerEmailException;
 import com.example.customerservices.utils.exceptions.InvalidInputException;
 import com.example.customerservices.utils.exceptions.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+import static org.springframework.http.HttpStatus.*;
 
 @RestControllerAdvice
 @Slf4j
@@ -22,32 +21,35 @@ public class GlobalControllerExceptionHandler {
 
     @ResponseStatus(NOT_FOUND)
     @ExceptionHandler(NotFoundException.class)
-    public HttpErrorInfo handleNotFoundException(WebRequest request, Exception ex) {
-        return createHttpErrorInfo(NOT_FOUND, request, ex);
+    public HttpErrorInfo handleNotFoundException(WebRequest request, NotFoundException ex) {
+        return createHttpErrorInfo(NOT_FOUND, request, ex.getMessage());
     }
 
     @ResponseStatus(UNPROCESSABLE_ENTITY)
     @ExceptionHandler(InvalidInputException.class)
-    public HttpErrorInfo handleInvalidInputException(WebRequest request, Exception ex) {
-        return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex);
+    public HttpErrorInfo handleInvalidInputException(WebRequest request, InvalidInputException ex) {
+        return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex.getMessage());
     }
 
     @ResponseStatus(UNPROCESSABLE_ENTITY)
-    @ExceptionHandler(DuplicateVinException.class)
-    public HttpErrorInfo handleDuplicateVinException(WebRequest request, Exception ex) {
-        return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex);
+    @ExceptionHandler(DuplicateCustomerEmailException.class)
+    public HttpErrorInfo handleDuplicateCustomerEmailException(WebRequest request,
+                                                               DuplicateCustomerEmailException ex) {
+        return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex.getMessage());
     }
 
+    @ResponseStatus(BAD_REQUEST)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public HttpErrorInfo handleIllegalArgumentException(WebRequest request, IllegalArgumentException ex) {
+        return createHttpErrorInfo(BAD_REQUEST, request, ex.getMessage());
+    }
 
+    private HttpErrorInfo createHttpErrorInfo(HttpStatus status,
+                                              WebRequest request,
+                                              String message) {
 
-    private HttpErrorInfo createHttpErrorInfo(HttpStatus httpStatus, WebRequest request, Exception ex) {
-        final String path = request.getDescription(false);
-        // final String path = request.getPath().pathWithinApplication().value();
-        final String message = ex.getMessage();
-        log.debug("message is: " + message);
-
-        log.debug("Returning HTTP status: {} for path: {}, message: {}", httpStatus, path, message);
-
-        return new HttpErrorInfo(httpStatus, path, message);
+        String path = request.getDescription(false);
+        log.debug("Returning HTTP {} for {}: {}", status, path, message);
+        return new HttpErrorInfo(status, path, message);
     }
 }

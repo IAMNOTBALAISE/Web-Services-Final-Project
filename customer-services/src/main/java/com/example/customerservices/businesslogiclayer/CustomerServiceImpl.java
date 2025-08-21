@@ -10,6 +10,7 @@ import com.example.customerservices.datamapperlayer.CustomerRequestMapper;
 import com.example.customerservices.datamapperlayer.CustomerResponseMapper;
 import com.example.customerservices.presentationlayer.CustomerRequestModel;
 import com.example.customerservices.presentationlayer.CustomerResponseModel;
+import com.example.customerservices.utils.exceptions.DuplicateCustomerEmailException;
 import com.example.customerservices.utils.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
+
     private final CustomerRepository customerRepository;
     private final CustomerResponseMapper customerResponseMapper;
     private final CustomerRequestMapper customerRequestMapper;
@@ -61,19 +63,19 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
 
-        CustomerIdentifier customerIdentifier = new CustomerIdentifier(newCustomerData.getCustomerId());
 
 
-        Customer foundCustomer = this.customerRepository.findCustomerByCustomerIdentifier_CustomerId(customerIdentifier.getCustomerId());
+
+        Customer foundCustomer = this.customerRepository.findCustomerByEmailAddress(newCustomerData.getEmailAddress());
         if (foundCustomer != null) {
-            throw new IllegalArgumentException("Customer with customer id: " + customerIdentifier.getCustomerId() + " is already in repository. Choose another Customer Identifier.");
+            throw new DuplicateCustomerEmailException(newCustomerData.getEmailAddress());
         }
 
 
         Customer customer = this.customerRequestMapper.requestModelToEntity(newCustomerData);
 
         // Set the CustomerIdentifier and password
-        customer.setCustomerIdentifier(customerIdentifier);
+        customer.setCustomerIdentifier(new CustomerIdentifier());
         customer.setPassword(newCustomerData.getPassword1());
 
 
@@ -86,15 +88,16 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerResponseModel updateCustomer(String customerId, CustomerRequestModel newCustomerData) {
-        if (customerId == null || customerId.isEmpty()) {
-            throw new IllegalArgumentException("Customer ID cannot be null or empty.");
-        }
+//        if (customerId == null || customerId.isEmpty()) {
+//            throw new IllegalArgumentException("Customer ID cannot be null or empty.");
+//        }
 
 
         Customer foundCustomer = this.customerRepository.findCustomerByCustomerIdentifier_CustomerId(customerId);
         if (foundCustomer == null) {
             throw new NotFoundException("Customer with id: " + customerId + " not found in repository.");
         }
+
         String pw1 = newCustomerData.getPassword1();
         String pw2 = newCustomerData.getPassword2();
         if (pw1 == null) pw1 = "";
@@ -102,17 +105,24 @@ public class CustomerServiceImpl implements CustomerService {
         if (!pw1.equals(pw2)) {
             throw new IllegalArgumentException("Entered passwords do not match!");
         }
-        Customer customer = this.customerRequestMapper.requestModelToEntity(newCustomerData);
+
+        Customer customerWithSameEmail = this.customerRepository.findCustomerByEmailAddress(newCustomerData.getEmailAddress());
+        if (customerWithSameEmail != null && !customerWithSameEmail.getCustomerIdentifier().getCustomerId().equals(customerId)) {
+            throw new DuplicateCustomerEmailException(newCustomerData.getEmailAddress());
+        }
 
 
-        customer.setCustomerIdentifier(foundCustomer.getCustomerIdentifier());
-        customer.setId(foundCustomer.getId());
 
 
-        customer.setPassword(newCustomerData.getPassword1());
+        Customer updatedCustomer = this.customerRequestMapper.requestModelToEntity(newCustomerData);
 
 
-        Customer savedCustomer = this.customerRepository.save(customer);
+        updatedCustomer.setId(foundCustomer.getId());
+        updatedCustomer.setCustomerIdentifier(foundCustomer.getCustomerIdentifier());
+        updatedCustomer.setPassword(newCustomerData.getPassword1());
+
+
+        Customer savedCustomer = this.customerRepository.save(updatedCustomer);
 
 
         return this.customerResponseMapper.entityToResponseModel(savedCustomer);

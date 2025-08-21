@@ -1,0 +1,72 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    com.example.serviceplanservices: TRACE
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  application:
+    name: service-plan-services
+
+  datasource:
+    url: jdbc:mysql://serviceplanmysql-db:3306/serviceplan-db
+    username: user
+    password: pwd
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      platform: mysql
+      mode: always
+      logging:
+        enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: h2
+
+  h2:
+    console:
+      enabled: true
+
+  datasource:
+    url: jdbc:h2:mem:serviceplan-db;DB_CLOSE_DELAY=-1;NON_KEYWORDS=YEAR
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        auto-quote-keyword: true
+    defer-datasource-initialization: true
+
+sql:
+  init:
+    platform: h2
+    mode: embedded

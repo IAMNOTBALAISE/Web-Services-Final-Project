@@ -1,33 +1,248 @@
 version: '3.6'
 
 services:
+  api-gateway-service:
+    build: ./api-gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - customer-services
+      - product-services
+      - service-plan-services
+      - order-services
+    networks:
+      - internal_net
+      - public_net
 
 
- customer-services:
-   build: customer-services
-   hostname: customerssservicehost
-   ports:
-    - "8081:8080"
+  customer-services:
+    build: ./customer-services
+#    hostname: customersservicehost
+    container_name: customer-services
+#    ports:
+#      - "8081:8080"
+    expose:
+      - "8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      customerspostgres-db:
+        condition: service_healthy
+    networks:
+      - internal_net
+
+  customerspostgres-db:
+    image: postgres:15
+    container_name: customerspostgres-db
+#    ports:
+#      - "5433:5432"
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: customers-db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pwd
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - internal_net
+      - public_net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-main
+    environment:
+      PGADMIN_DEFAULT_EMAIL: sysadmin@domain.com
+      PGADMIN_DEFAULT_PASSWORD: sysadmin123
+    ports:
+      - "5051:80"
+    depends_on:
+      - customerspostgres-db
+    volumes:
+      - pgadmin-main-data:/var/lib/pgadmin
+    restart: always
+    networks:
+      - public_net
+
+
+  product-services:
+   build: ./product-services
+   container_name: product-services
+#   hostname: productservicehost
+#   ports:
+#    - "8082:8080"       # Host 8082 → Container 8080
+   expose:
+     - "8080"
    environment:
     - SPRING_PROFILES_ACTIVE=docker
    depends_on:
-    customerspostgres-db:
+    productmysql-db:
       condition: service_healthy
+   networks:
+    - internal_net
 
- customerspostgres-db:
-  image: postgres:15
-  container_name: customerspostgres-db
-  ports:
-    - "5433:5432"
-  environment:
-    POSTGRES_DB: customers-db
-    POSTGRES_USER: user
-    POSTGRES_PASSWORD: pwd
-  healthcheck:
-    test: [ "CMD-SHELL", "pg_isready -U user" ]
-    interval: 10s
-    timeout: 5s
-    retries: 10
+  productmysql-db:
+    image: mysql:8.0
+    container_name: productmysql-db
+#    ports:
+#      - "3307:3306"
+    expose:
+      - "3306"
+    environment:
+      MYSQL_DATABASE: product-db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pwd
+      MYSQL_ROOT_PASSWORD: rootpwd
+    volumes:
+      - product_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uuser -ppwd"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal_net
+      - public_net
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: productmysql-db
+      PMA_USER: user
+      PMA_PASSWORD: pwd
+    ports:
+      - "8083:80"
+    depends_on:
+      - productmysql-db
+    networks:
+      - public_net
+
+
+
+
+  service-plan-services:
+    build: ./serviceplan-services
+    container_name: service-plan-services
+#    hostname: serviceplanservicehost
+#    ports:
+#      - "8084:8080"
+    expose:
+      - "8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      serviceplanmysql-db:
+        condition: service_healthy
+    networks:
+      - internal_net
+
+  serviceplanmysql-db:
+    image: mysql:8.0
+    container_name: serviceplanmysql-db
+#    ports:
+#      - "3308:3306"
+    expose:
+      - "3306"
+    environment:
+      MYSQL_DATABASE: serviceplan-db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pwd
+      MYSQL_ROOT_PASSWORD: rootpwd
+    volumes:
+      - serviceplan_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uuser -ppwd"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal_net
+      - public_net
+
+  serviceplan-phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin-serviceplan
+    environment:
+      - PMA_HOST=serviceplanmysql-db
+      - PMA_PORT=3306
+      - PMA_USER=user
+      - PMA_PASSWORD=pwd
+    ports:
+      - "8085:80"
+    depends_on:
+      serviceplanmysql-db:
+        condition: service_healthy
+    networks:
+      - public_net
+
+  order-services:
+    build: ./order-services
+    container_name: order-services
+#    ports:
+#      - "8086:8080"       # ➜ host:container
+    expose:
+      - "8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      ordermongo-db-service:
+        condition: service_healthy
+    networks:
+      - internal_net
+
+  ordermongo-db-service:
+    image: mongo:6
+    container_name: ordermongo-db-service
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: pwd
+    volumes:
+      - order_mongo_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--norc", "--quiet", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal_net
+      - public_net      # so mongo-express can reach it
+
+  order-mongo-express:
+    image: mongo-express
+    container_name: order-mongo-express
+    restart: always
+    ports:
+      - "5052:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://user:pwd@ordermongo-db-service:27017/admin
+    depends_on:
+      - ordermongo-db-service
+    networks:
+      - public_net
+
+
 
 volumes:
   db_data:
+  logs:
+  pgadmin-main-data:
+  product_db_data:
+  serviceplan_db_data:
+  order_mongo_data:
+
+networks:
+  internal_net:
+    internal: true
+  public_net: {}

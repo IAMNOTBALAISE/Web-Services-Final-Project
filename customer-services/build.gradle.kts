@@ -1,23 +1,21 @@
 plugins {
+    // core Java support
     java
+
+    // Spring Boot + dependency management
     id("org.springframework.boot") version "3.2.4"
     id("io.spring.dependency-management") version "1.1.4"
+
+    // JaCoCo for code coverage
     jacoco
-    id("jacoco")
 }
-
-
 
 group = "org.champqcsoft"
 version = "0.0.1-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-}
-
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -61,54 +59,55 @@ dependencies {
 }
 
 tasks.withType<Test> {
+    // JUnit 5
     useJUnitPlatform()
-}
 
-tasks.test {
+    // show pass/fail in console
     testLogging {
         events("passed", "skipped", "failed")
-        showExceptions = true
-        showStackTraces = true
+        showExceptions    = true
+        showStackTraces   = true
         showStandardStreams = true
     }
-}
 
-//tasks.jacocoTestReport {
-//    dependsOn(tasks.test) // tests are required to run before generating the report
-//}
+    // after tests generate JaCoCo report
+    finalizedBy("jacocoTestReport")
+}
 
 jacoco {
     toolVersion = "0.8.11"
-    reportsDirectory.set(layout.buildDirectory.dir("customJacocoReportDir"))
-}
-
-tasks.test {
-    finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
+    // put HTML report under build/reports/jacoco/html
+    reportsDirectory.set(layout.buildDirectory.dir("reports/jacoco"))
 }
 
 tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+
     reports {
+        html.required.set(true)
         xml.required.set(false)
         csv.required.set(false)
-        html.outputLocation.set( layout.buildDirectory.dir("jacocoHtml")  )
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/html"))
     }
+
 }
 
 tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = "0.5".toBigDecimal()
+                minimum = "0.9".toBigDecimal()
             }
         }
         rule {
             isEnabled = false
+
             element = "CLASS"
             includes = listOf("org.gradle.*")
             limit {
                 counter = "LINE"
                 value = "TOTALCOUNT"
-                maximum = "0.3".toBigDecimal()
+                maximum = "1.0".toBigDecimal()
             }
         }
     }

@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS customer_phonenumbers;
+DROP TABLE IF EXISTS customers;
+
 CREATE TABLE IF NOT EXISTS customers (
 
     id SERIAL PRIMARY KEY,

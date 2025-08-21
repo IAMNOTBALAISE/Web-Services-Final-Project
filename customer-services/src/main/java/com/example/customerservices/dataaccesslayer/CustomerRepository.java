@@ -7,4 +7,6 @@ public interface CustomerRepository extends
     Customer findCustomerByCustomerIdentifier_CustomerId(String customerId);
 
     Customer findCustomerByEmailAddress(String emailAddress);
+
+    boolean existsByCustomerIdentifier_CustomerId(String customerId);
 }

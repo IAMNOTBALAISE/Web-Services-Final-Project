@@ -1,0 +1,141 @@
+@startuml
+!pragma layout dot
+skinparam graphviz_dot_options "-Grankdir=TB -Granksep=1.5 -Gnodesep=0.5"
+
+hide circle
+top to bottom direction
+
+!define ENTITY(x) class x << Entity >>
+!define AGGREGATE(x) class x << Aggregate >>
+!define AGGREGATE_ROOT(x) class x << Aggregate Root >>
+!define AGGREGATE_ROOT_ENTITY(x) class x << Aggregate Root >> << Entity >>
+!define VALUE_OBJECT(x) class x << Value Object >>
+!pragma useVerticalIf on
+skinparam dpi 350
+skinparam packageStyle rectangle
+skinparam rectangle {
+    BackgroundColor #f7f4eb
+    BorderColor Black
+}
+
+Package "Watch Store System" <<Rectangle>> #F5F5F5 {
+
+    Package "Customer Management Sub-Domain" <<Rectangle>> #FFCDD2 {
+        ENTITY(Customer) #lightpink {
+            id: Integer
+            lastName: String
+            firstName: String
+            emailAddress: String
+            username: String
+            password: String
+        }
+        VALUE_OBJECT(CustomerIdentifier) #Bisque {
+            customerId: UUID
+        }
+        VALUE_OBJECT(CustomerAddress) #Bisque {
+            street: String
+            city: String
+            province: String
+            postalCode: String
+        }
+        VALUE_OBJECT(PhoneNumber) #Bisque {
+            type: String
+            number: String
+        }
+        Customer -u-> CustomerIdentifier
+        Customer o--> CustomerAddress
+        Customer *-- "0..*" PhoneNumber
+    }
+
+    Package "Product Management Sub-Domain" <<Rectangle>> #C3E6CB {
+        ENTITY(Watch) #lightblue {
+            id: Integer
+            model: String
+            material: String
+            quantity: Integer
+        }
+        ENTITY(Catalog) #lightgray {
+            id: Integer
+            type: String
+            description: String
+        }
+        VALUE_OBJECT(WatchIdentifier) #Bisque {
+            watchId: UUID
+        }
+        VALUE_OBJECT(CatalogIdentifier) #Bisque {
+            catalogId: UUID
+        }
+        VALUE_OBJECT(Price) #Bisque {
+            sale: BigDecimal
+            msrp: BigDecimal
+            cost: BigDecimal
+            totalOptionsCost: BigDecimal
+        }
+        VALUE_OBJECT(WatchBrand) #Bisque {
+            name: String
+            country: String
+        }
+        VALUE_OBJECT(Accessory) #Bisque {
+            name: String
+            price: BigDecimal
+        }
+        VALUE_OBJECT(UsageType) #Bisque {
+            value: Enum { NEW, USED }
+        }
+
+        Watch -u-> WatchIdentifier
+        Watch -u-> CatalogIdentifier
+        Watch o--> Price
+        Watch o--> WatchBrand
+        Watch *-- "0..*" Accessory
+        Watch o--> UsageType
+        Catalog -u-> CatalogIdentifier
+    }
+
+    Package "Service Plan Management Sub-Domain" <<Rectangle>> #FFD700 {
+        ENTITY(ServicePlan) #lightgreen {
+            id: Integer
+            coverageDetails: String
+            expirationDate: LocalDate
+        }
+        VALUE_OBJECT(ServicePlanIdentifier) #Bisque {
+            planId: UUID
+        }
+        ServicePlan -u-> ServicePlanIdentifier
+    }
+
+    Package "Order Management Sub-Domain (Aggregating)" <<Rectangle>> #DFBDF4 {
+        AGGREGATE_ROOT_ENTITY(Order) #lightPink {
+            id: String
+            orderName: String
+            orderDate: LocalDateTime
+        }
+        VALUE_OBJECT(OrderIdentifier) #Bisque {
+            orderId: UUID
+        }
+        VALUE_OBJECT(OrderStatus) #Bisque {
+            value: Enum { PURCHASE_COMPLETED, PURCHASE_CANCELED }
+        }
+        VALUE_OBJECT(Price) #Bisque {
+            sale: BigDecimal
+            currency: Currency
+            paymentCurrency: Currency
+        }
+        VALUE_OBJECT(Currency) #Bisque {
+            value: Enum { CAD, USD, SAR, EUR }
+        }
+
+        Order -u-> OrderIdentifier
+        Order -u-> CustomerIdentifier
+        Order -u-> WatchIdentifier
+        Order -u-> ServicePlanIdentifier
+        Order -u-> CatalogIdentifier
+        Order o--> Price
+        Price o--> Currency
+        Order --> OrderStatus
+
+        note right of Order : Invariant: [When OrderStatus = PURCHASE_COMPLETED, Watch.quantity must be decremented by 1;\nWhen OrderStatus = PURCHASE_CANCELED, Watch.quantity must be incremented by 1]
+    }
+}
+
+@enduml

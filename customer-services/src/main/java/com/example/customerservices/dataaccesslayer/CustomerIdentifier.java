@@ -2,16 +2,15 @@ package com.example.customerservices.dataaccesslayer;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
 @Embeddable
 @Getter
 @Setter
-@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
 public class CustomerIdentifier {
 
 
@@ -19,9 +18,9 @@ public class CustomerIdentifier {
     private String customerId;
 
 
-    public CustomerIdentifier(String customerId) {
-        this.customerId = (customerId != null && !customerId.isEmpty()) ? customerId : UUID.randomUUID().toString();
+    public CustomerIdentifier() {
+        this.customerId = UUID.randomUUID().toString();
     }
 
-  }
+}
 

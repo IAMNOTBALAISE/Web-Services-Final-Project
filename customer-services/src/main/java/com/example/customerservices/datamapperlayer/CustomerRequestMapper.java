@@ -10,8 +10,9 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CustomerRequestMapper {
+
+
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "customerIdentifier.customerId", source = "customerId")
     @Mapping(target = "customerAddress.streetAddress", source = "streetAddress")
     @Mapping(target = "customerAddress.postalCode", source = "postalCode")
     @Mapping(target = "customerAddress.city", source = "city")

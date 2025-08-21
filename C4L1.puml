@@ -1,0 +1,20 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+' uncomment the following line and comment the first to use locally
+' !include C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram for Watch Store System
+
+Person(employee, "Employee", "An employee of the Watch Store business.")
+Person(customer, "Customer", "A customer who browses and buys watches.")
+
+
+    System(dealership_system, "Watch Store Management System", "Handles inventory tracking, customer purchases, and sales management for the Watch Store.")
+
+
+Rel(employee, dealership_system, "Uses to manage inventory and process sales")
+Rel(customer, dealership_system, "Uses to browse watches and place orders")
+
+@enduml

@@ -1,0 +1,59 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+AddElementTag("microService", $shape=EightSidedShape(), $bgColor="CornflowerBlue", $fontColor="white", $legendText="Microservice")
+AddElementTag("storage",      $shape=RoundedBoxShape(),    $bgColor="lightSkyBlue", $fontColor="white")
+
+SHOW_PERSON_OUTLINE()
+
+title Container Diagram for Watch Store System with DDD Sub-Domain Mapping
+
+Person(employee, "Employee", "An employee of the Watch Store business.")
+Person(customer, "Customer", "A customer who browses and buys watches.")
+
+System_Boundary(c1, "Watch Store System") {
+
+    Container(web_app, "Web Application",      "Java, Spring MVC",      "Delivers the static content and the SPA")
+    Container(spa,     "Single-Page App",      "JavaScript, Angular",    "SPA for customers' interactions")
+    Container(api_gateway, "API-gateway",      "Java, Docker",           "Routes requests to internal microservices", $tags="microService")
+
+    Container(cs, "customer-service",    "Java, Docker", "Customer Management API", $tags="microService")
+    Container(ps, "order-service",       "Java, Docker", "Order Management API",    $tags="microService")
+    Container(is, "product-service",     "Java, Docker", "Product Management API",  $tags="microService")
+    Container(sp, "servicePlan-service", "Java, Docker", "Service Plan Management API", $tags="microService")
+
+    ContainerDb(cust_db,      "customer-db",    "PostgreSQL", "Stores customer data",                 $tags="storage")
+    ContainerDb(purch_db,     "order-db",       "MongoDB",    "Stores orders and purchase history",    $tags="storage")
+    ContainerDb(invent_db,    "product-db",     "MySQL",      "Stores product catalog",                $tags="storage")
+    ContainerDb(serviceplan_db,"serviceplan-db","MySQL",      "Stores service plan records",           $tags="storage")
+}
+
+' Frontend to backend
+Rel_Neighbor(web_app, spa,           "Delivers")
+Rel(spa,         api_gateway,       "Uses", "JSON/HTTPS")
+
+' External actors
+Rel(employee, web_app, "Uses", "HTTPS")
+Rel(employee, spa,     "Uses", "HTTPS")
+Rel(customer, web_app, "Uses", "HTTPS")
+Rel(customer, spa,     "Uses", "HTTPS")
+
+' API gateway to services
+Rel(api_gateway, cs, "Routes to", "HTTPS")
+Rel(api_gateway, ps, "Routes to", "HTTPS")
+Rel(api_gateway, is, "Routes to", "HTTPS")
+Rel(api_gateway, sp, "Routes to", "HTTPS")
+
+' Service-to-service collaboration
+Rel(ps, is, "Requests product availability", "HTTPS")
+Rel(ps, cs, "Verifies customer info",         "HTTPS")
+Rel(ps, sp, "Processes service plan",          "HTTPS")
+
+' Database interactions
+Rel_D(cs,  cust_db,       "Reads/Writes", "JDBC/SQL")
+Rel_D(ps,  purch_db,      "Reads/Writes", "MongoDB Driver")
+Rel_D(is,  invent_db,     "Reads/Writes", "JDBC/SQL")
+Rel_D(sp,  serviceplan_db,"Reads/Writes", "JDBC/SQL")
+@enduml
