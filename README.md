@@ -45,37 +45,6 @@ API Gateway → stateless, routes requests only
 
 This separation allows each service to evolve independently and use the most suitable database technology.
 
-**Getting Started**
-Prerequisites
-
-Java 21+
-
-Gradle
- (wrapper included)
-
-Docker
- & Docker Compose
-
-Build
-./gradlew clean build
-
-Run with Docker Compose
-docker-compose up --build
-
-
-This will start all microservices along with their databases.
-
-**Project Structure**
-Milestone1/
-│── api-gateway-service/     # API Gateway for routing requests
-│── customer-services/       # Customer management (PostgreSQL)
-│── order-services/          # Orders & transactions (MySQL)
-│── product-services/        # Watch catalog & inventory (MySQL)
-│── servicePlan-services/    # Warranty & service plans (MongoDB)
-│── docker-compose.yml       # Orchestration for services & DBs
-│── Dockerfile               # Service container definition
-│── build.gradle.kts         # Gradle build configuration
-│── *.puml                   # PlantUML diagrams (C4, DDD)
 
 **Diagrams**
 
