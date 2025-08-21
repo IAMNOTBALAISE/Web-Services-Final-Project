@@ -29,7 +29,7 @@ Gradle for build and dependency management
 
 PlantUML diagrams (C4L1.puml, C4L2.puml, DDD.puml) for visualizing architecture and domain design
 
-Databases
+**Databases**
 
 Each microservice has its own database, ensuring loose coupling and scalability:
 
